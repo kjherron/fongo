@@ -5,12 +5,12 @@
         <artifactId>oss-parent</artifactId>
         <version>9</version>
     </parent>
-    <groupId>com.github.fakemongo</groupId>
+    <groupId>io.github.kjherron</groupId>
     <artifactId>fongo</artifactId>
-    <version>2.1.2-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>fongo</name>
     <description>Fake in-memory mongo</description>
-    <url>https://github.com/fakemongo/fongo</url>
+    <url>https://github.com/kjherron/fongo</url>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -19,9 +19,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:git@github.com:fakemongo/fongo.git</connection>
-        <developerConnection>scm:git:git@github.com:fakemongo/fongo.git</developerConnection>
-        <url>git@github.com:fakemongo/fongo.git</url>
+        <connection>scm:git:git@github.com:kjherron/fongo.git</connection>
+        <developerConnection>scm:git:git@github.com:kjherron/fongo.git</developerConnection>
+        <url>git@github.com:kjherron/fongo.git</url>
     </scm>
 
     <prerequisites>
@@ -29,6 +29,10 @@
     </prerequisites>
 
     <developers>
+    	<developer>
+    		<id>kjherron</id>
+    		<name>Ken Herron</name>
+    	</developer>
         <developer>
             <id>hoffrocket</id>
             <name>Jon Hoffman</name>
