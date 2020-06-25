@@ -98,13 +98,13 @@ public class FongoAggregateZipTest {
 //        "{ \"biggestCity\" : { \"name\" : \"WORCESTER\" , \"pop\" : 169856} , \"smallestCity\" : { \"name\" : \"BUCKLAND\" , \"pop\" : 16} , \"state\" : \"MA\"}]"), resultAggregate);
     assertEquals(8, resultAggregate.size());
     assertEquals("BRIDGEPORT", Util.extractField(resultAggregate.get(0), "biggestCity.name"));
-    assertEquals(141638, Util.extractField(resultAggregate.get(0), "biggestCity.pop"));
+    assertEquals((Number)141638, Util.extractField(resultAggregate.get(0), "biggestCity.pop"));
     assertEquals("EAST KILLINGLY", Util.extractField(resultAggregate.get(0), "smallestCity.name"));
-    assertEquals(25, Util.extractField(resultAggregate.get(0), "smallestCity.pop"));
+    assertEquals((Number)25, Util.extractField(resultAggregate.get(0), "smallestCity.pop"));
     DBObject last = resultAggregate.get(resultAggregate.size() - 1);
     assertEquals("WORCESTER", Util.extractField(last, "biggestCity.name"));
-    assertEquals(169856, Util.extractField(last, "biggestCity.pop"));
+    assertEquals((Number)169856, Util.extractField(last, "biggestCity.pop"));
     assertEquals("BUCKLAND", Util.extractField(last, "smallestCity.name"));
-    assertEquals(16, Util.extractField(last, "smallestCity.pop"));
+    assertEquals((Number)16, Util.extractField(last, "smallestCity.pop"));
   }
 }

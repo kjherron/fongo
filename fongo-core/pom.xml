@@ -65,6 +65,7 @@
 
         <!-- Gpg -->
         <gpg.keyname>257FA0AB</gpg.keyname>
+        <java.version>1.8</java.version>
     </properties>
 
     <dependencies>
@@ -217,8 +218,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.2</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <encoding>UTF-8</encoding>
                     <testExcludes>
                         <exclude>com/github/fakemongo/PerfTest.java</exclude>
@@ -298,9 +299,9 @@
                 <configuration>
                     <javacArgs>
                         <javacArg>-source</javacArg>
-                        <javacArg>1.6</javacArg>
+                        <javacArg>${java.version}</javacArg>
                         <javacArg>-target</javacArg>
-                        <javacArg>1.6</javacArg>
+                        <javacArg>${java.version}</javacArg>
                     </javacArgs>
                     <jvmArgs>
                         <jvmArg>-Xms64m</jvmArg>
@@ -308,7 +309,7 @@
                         <!--jvmArg>-Dscala.timings=true</jvmArg -->
                     </jvmArgs>
                     <args>
-                        <arg>-target:jvm-1.6</arg>
+                        <arg>-target:jvm-${java.version}</arg>
                         <arg>-unchecked</arg>
                         <arg>-deprecation</arg>
                         <arg>-feature</arg>
