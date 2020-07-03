@@ -65,6 +65,7 @@
 
         <!-- Gpg -->
         <gpg.keyname>257FA0AB</gpg.keyname>
+        <mongo.driver.version>3.4.2</mongo.driver.version>
         <java.version>1.8</java.version>
     </properties>
 
@@ -78,13 +79,13 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.4.2</version>
+            <version>${mongo.driver.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-async</artifactId>
-            <version>3.4.2</version>
+            <version>${mongo.driver.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
