@@ -1,5 +1,40 @@
 package com.github.fakemongo;
 
+import static com.mongodb.FongoDBCollection.bsonArray;
+import static com.mongodb.FongoDBCollection.bsonDocument;
+import static com.mongodb.FongoDBCollection.bsonDocuments;
+import static com.mongodb.FongoDBCollection.dbObject;
+import static com.mongodb.FongoDBCollection.dbObjects;
+import static com.mongodb.FongoDBCollection.decode;
+import static com.mongodb.FongoDBCollection.decoderContext;
+import static com.mongodb.bulk.WriteRequest.Type.INSERT;
+import static com.mongodb.bulk.WriteRequest.Type.REPLACE;
+import static java.util.Arrays.asList;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.bson.BsonArray;
+import org.bson.BsonBoolean;
+import org.bson.BsonDocument;
+import org.bson.BsonDocumentReader;
+import org.bson.BsonDouble;
+import org.bson.BsonInt32;
+import org.bson.BsonInt64;
+import org.bson.BsonNull;
+import org.bson.BsonString;
+import org.bson.BsonValue;
+import org.bson.Document;
+import org.bson.FieldNameValidator;
+import org.bson.codecs.Codec;
+import org.bson.codecs.Decoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.mongodb.AggregationOutput;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkUpdateRequestBuilder;
@@ -13,13 +48,6 @@ import com.mongodb.DBObject;
 import com.mongodb.FongoBulkWriteCombiner;
 import com.mongodb.FongoDB;
 import com.mongodb.FongoDBCollection;
-import static com.mongodb.FongoDBCollection.bsonArray;
-import static com.mongodb.FongoDBCollection.bsonDocument;
-import static com.mongodb.FongoDBCollection.bsonDocuments;
-import static com.mongodb.FongoDBCollection.dbObject;
-import static com.mongodb.FongoDBCollection.dbObjects;
-import static com.mongodb.FongoDBCollection.decode;
-import static com.mongodb.FongoDBCollection.decoderContext;
 import com.mongodb.InsertManyWriteConcernException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCommandException;
@@ -37,8 +65,6 @@ import com.mongodb.bulk.InsertRequest;
 import com.mongodb.bulk.UpdateRequest;
 import com.mongodb.bulk.WriteConcernError;
 import com.mongodb.bulk.WriteRequest;
-import static com.mongodb.bulk.WriteRequest.Type.INSERT;
-import static com.mongodb.bulk.WriteRequest.Type.REPLACE;
 import com.mongodb.connection.BulkWriteBatchCombiner;
 import com.mongodb.connection.ClusterId;
 import com.mongodb.connection.Connection;
@@ -54,29 +80,6 @@ import com.mongodb.internal.validator.UpdateFieldNameValidator;
 import com.mongodb.operation.FongoBsonArrayWrapper;
 import com.mongodb.session.SessionContext;
 import com.mongodb.util.JSON;
-import java.util.ArrayList;
-import static java.util.Arrays.asList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import org.bson.BsonArray;
-import org.bson.BsonBoolean;
-import org.bson.BsonDocument;
-import org.bson.BsonDocumentReader;
-import org.bson.BsonDouble;
-import org.bson.BsonInt32;
-import org.bson.BsonInt64;
-import org.bson.BsonNull;
-import org.bson.BsonString;
-import org.bson.BsonValue;
-import org.bson.Document;
-import org.bson.FieldNameValidator;
-import org.bson.codecs.Codec;
-import org.bson.codecs.Decoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -112,6 +115,7 @@ public class FongoConnection implements Connection {
   public WriteConcernResult insert(MongoNamespace namespace, boolean ordered, InsertRequest insertRequest) {
     LOG.debug("insert() namespace:{} insert:{}", namespace, insertRequest);
     final DBCollection collection = dbCollection(namespace);
+    validateCollectionName(collection.getName());
     final WriteConcern writeConcern = collection.getWriteConcern();
 
     final DBObject parse = dbObject(insertRequest.getDocument());
