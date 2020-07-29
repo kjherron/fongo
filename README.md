@@ -1,8 +1,8 @@
 [![Build Status](https://travis-ci.org/fakemongo/fongo.svg?branch=master)](https://travis-ci.org/fakemongo/fongo)
 
-# fongo
+# wongo
 
-Fongo is an in-memory java implementation of MongoDB. It intercepts calls to the standard mongo-java-driver for 
+Wongo is a fork of Fongo, an in-memory java implementation of MongoDB. It intercepts calls to the standard mongo-java-driver for 
 finds, updates, inserts, removes and other methods. The primary use is for lightweight unit testing where you
 don't want to spin up a `mongod` process.
 
@@ -228,7 +228,11 @@ You can fork the project and add a new failing test case.
 It's even better if you can both add the test case and fix the bug. I will merge pull requests with test cases and add 
 your name to the patch contributors below. Please maintain the same code formatting and style as the rest of the project.
 
-## Changelog
+## Wongo Changelog
+
+Version 1.0.0 Tag of the fongo master branch, depending on mongo-java-driver 3.4.x.
+
+## Fongo Changelog
 
 Version 2.1.0 include compatibility with 3.X async driver version.
 Version 2.0.0 break compatibility with 2.X driver version.
@@ -299,3 +303,6 @@ Version 1.6.0 break compatibility with 2.12.X driver version.
 * [Enrico Pelizzon](https://github.com/theimplementer)
 * [Krzysztof Sukienniczak](https://github.com/krs)
 * [zigzago](https://github.com/zigzago)
+
+## Wongo Maintainer
+* Ken Herron [kjherron](https://github.com/kjherron)
