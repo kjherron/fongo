@@ -1,20 +1,23 @@
 package com.github.fakemongo;
 
-import com.github.fakemongo.junit.FongoRule;
-import com.mongodb.MongoBulkWriteException;
-import com.mongodb.bulk.BulkWriteError;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.InsertManyOptions;
-import java.util.ArrayList;
 import static java.util.Arrays.asList;
-import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+
+import com.github.fakemongo.junit.FongoRule;
+import com.mongodb.MongoBulkWriteException;
+import com.mongodb.bulk.BulkWriteError;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.InsertManyOptions;
 
 /**
  * Behavior of real mongo driver's {@link com.mongodb.client.MongoCollection#insertMany} is as follows:
@@ -238,7 +241,7 @@ public class FongoInsertManyTest {
     if (REAL_MONGO) {
       return "E11000 duplicate key error collection: db.collection index: _id_ dup key: { : " + value + " }";
     } else {
-      return "E11000 duplicate key error collection: db.collection._id  dup key : {[[" + value + "]] }";
+      return "E11000 duplicate key error index: db.collection._id  dup key : {[[" + value + "]] }";
     }
   }
 

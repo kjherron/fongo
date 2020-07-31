@@ -1,5 +1,16 @@
 package com.github.fakemongo;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.bson.codecs.configuration.CodecRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.mongodb.DB;
 import com.mongodb.FongoBulkWriteCombiner;
 import com.mongodb.FongoDB;
@@ -9,6 +20,7 @@ import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
+import com.mongodb.WriteConcernException;
 import com.mongodb.WriteConcernResult;
 import com.mongodb.binding.ConnectionSource;
 import com.mongodb.binding.ReadBinding;
@@ -30,15 +42,8 @@ import com.mongodb.operation.UpdateOperation;
 import com.mongodb.operation.WriteOperation;
 import com.mongodb.session.ClientSession;
 import com.mongodb.session.SessionContext;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import io.github.kjherron.wongo.bulk.WongoBulkWriteCombiner;
 
 /**
  * Faked out version of com.mongodb.Mongo
@@ -224,16 +229,19 @@ public class Fongo implements /* TODO REMOVE 3.6 */ OperationExecutor {
     });
   }
 
-  public <T> T execute(final WriteOperation<T> operation, final ClientSession clientSession) {
-    if (operation instanceof MixedBulkWriteOperation) {
-      MixedBulkWriteOperation mixedBulkWriteOperation = (MixedBulkWriteOperation) operation;
-      FongoBulkWriteCombiner fongoBulkWriteCombiner = new FongoBulkWriteCombiner(mixedBulkWriteOperation.getWriteConcern());
+  private <T> T
+  executeMixedBulkWriteOperation(final MixedBulkWriteOperation mixedBulkWriteOperation, final ClientSession clientSession) {
+      WongoBulkWriteCombiner fongoBulkWriteCombiner = new WongoBulkWriteCombiner(mixedBulkWriteOperation.getWriteConcern());
       int i = 0;
       for (WriteRequest writeRequest : mixedBulkWriteOperation.getWriteRequests()) {
         if (writeRequest instanceof InsertRequest) {
-          InsertRequest insertRequest = (InsertRequest) writeRequest;
-          final WriteConcernResult update = new FongoConnection(this).insert(mixedBulkWriteOperation.getNamespace(), mixedBulkWriteOperation.isOrdered(), insertRequest);
-          fongoBulkWriteCombiner.addInsertResult(update);
+          try {
+			InsertRequest insertRequest = (InsertRequest) writeRequest;
+			  final WriteConcernResult update = new FongoConnection(this).insert(mixedBulkWriteOperation.getNamespace(), mixedBulkWriteOperation.isOrdered(), insertRequest);
+			  fongoBulkWriteCombiner.addInsertResult(update);
+		} catch (WriteConcernException e) {
+			fongoBulkWriteCombiner.addInsertError(i, e);
+		}
         } else if (writeRequest instanceof UpdateRequest) {
           UpdateRequest updateRequest = (UpdateRequest) writeRequest;
           final WriteConcernResult update = new FongoConnection(this).update(mixedBulkWriteOperation.getNamespace(), mixedBulkWriteOperation.isOrdered(), updateRequest);
@@ -247,7 +255,14 @@ public class Fongo implements /* TODO REMOVE 3.6 */ OperationExecutor {
         }
         i++;
       }
+      fongoBulkWriteCombiner.throwOnError(getServerAddress());
       return (T) fongoBulkWriteCombiner.toBulkWriteResult();
+  }
+
+  public <T> T execute(final WriteOperation<T> operation, final ClientSession clientSession) {
+    if (operation instanceof MixedBulkWriteOperation) {
+      MixedBulkWriteOperation mixedBulkWriteOperation = (MixedBulkWriteOperation) operation;
+      return executeMixedBulkWriteOperation(mixedBulkWriteOperation, clientSession);
     } else if (operation instanceof UpdateOperation) {
       final UpdateOperation updateOperation = (UpdateOperation) operation;
       final FongoBulkWriteCombiner fongoBulkWriteCombiner = new FongoBulkWriteCombiner(updateOperation.getWriteConcern());
