@@ -107,7 +107,7 @@ public class WongoBulkWriteCombiner {
     if (!errors.isEmpty()) {
       List<BulkWriteError> bwErrors = new ArrayList<BulkWriteError>();
       for (WriteError e: errors) {
-        bwErrors.add(new BulkWriteError(e.code, e.message, e.details, e.index));
+        bwErrors.add(new BulkWriteError(e.code, e.message, new BsonDocument(), e.index));
       }
       BulkWriteResult bulkWriteResult = getBulkWriteResult(writeConcern);
       throw new MongoBulkWriteException(bulkWriteResult, bwErrors, null, address);

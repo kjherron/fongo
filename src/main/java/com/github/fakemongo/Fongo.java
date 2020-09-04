@@ -241,6 +241,9 @@ public class Fongo implements /* TODO REMOVE 3.6 */ OperationExecutor {
 			  fongoBulkWriteCombiner.addInsertResult(update);
 		} catch (WriteConcernException e) {
 			fongoBulkWriteCombiner.addInsertError(i, e);
+			if (mixedBulkWriteOperation.isOrdered()) {
+				break;
+			}
 		}
         } else if (writeRequest instanceof UpdateRequest) {
           UpdateRequest updateRequest = (UpdateRequest) writeRequest;
