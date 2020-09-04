@@ -1619,14 +1619,14 @@ public class FongoDBCollection extends DBCollection {
     return retVal;
   }
 
-  public static List<com.mongodb.bulk.WriteRequest> translateWriteRequestsToNew(final List<com.mongodb.WriteRequest> writeRequests,
-                                                                                final Codec<DBObject> objectCodec) {
-    List<com.mongodb.bulk.WriteRequest> retVal = new ArrayList<com.mongodb.bulk.WriteRequest>(writeRequests.size());
-    for (com.mongodb.WriteRequest cur : writeRequests) {
-      retVal.add(cur.toNew());
-    }
-    return retVal;
-  }
+//  public static List<com.mongodb.bulk.WriteRequest> translateWriteRequestsToNew(final List<com.mongodb.WriteRequest> writeRequests,
+//                                                                                final Codec<DBObject> objectCodec) {
+//    List<com.mongodb.bulk.WriteRequest> retVal = new ArrayList<com.mongodb.bulk.WriteRequest>(writeRequests.size());
+//    for (com.mongodb.WriteRequest cur : writeRequests) {
+//      retVal.add(cur.toNew());
+//    }
+//    return retVal;
+//  }
 
   private Filter buildFilter(DBObject q) {
     try {

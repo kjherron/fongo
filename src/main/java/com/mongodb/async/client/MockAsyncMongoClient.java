@@ -3,30 +3,41 @@ package com.mongodb.async.client;
 import com.github.fakemongo.async.FongoAsync;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.connection.Cluster;
+import com.mongodb.connection.ClusterConnectionMode;
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ClusterSettings;
+import com.mongodb.connection.ClusterType;
 import com.mongodb.connection.Server;
+import com.mongodb.connection.ServerDescription;
 import com.mongodb.operation.AsyncOperationExecutor;
 import com.mongodb.selector.ServerSelector;
+import java.util.Collections;
 import org.bson.Document;
 
 public class MockAsyncMongoClient extends MongoClientImpl {
 
   private final FongoAsync fongoAsync;
 
-  public static MockAsyncMongoClient create(FongoAsync fongoAsync) {
+  public static MockAsyncMongoClient create(final FongoAsync fongoAsync) {
     // using objenesis here to prevent default constructor from spinning up background threads.
 //    MockAsyncMongoClient client = new ObjenesisStd().getInstantiatorOf(MockAsyncMongoClient.class).newInstance();
     MongoClientSettings settings = MongoClientSettings.builder().codecRegistry(fongoAsync.getFongo().getCodecRegistry()).build();
     MockAsyncMongoClient client = new MockAsyncMongoClient(fongoAsync, settings, new Cluster() {
       @Override
       public ClusterSettings getSettings() {
-        return null;
+        return ClusterSettings.builder().build();
       }
 
       @Override
       public ClusterDescription getDescription() {
         return null;
+      }
+
+      @Override
+      public ClusterDescription getCurrentDescription() {
+        return new ClusterDescription(ClusterConnectionMode.SINGLE, ClusterType.STANDALONE,
+            Collections.<ServerDescription>emptyList(), getSettings(),
+            null);
       }
 
       @Override

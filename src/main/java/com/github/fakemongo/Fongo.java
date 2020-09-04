@@ -1,6 +1,18 @@
 package com.github.fakemongo;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.bson.codecs.configuration.CodecRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.mongodb.DB;
+import com.mongodb.FongoBulkWriteCombiner;
 import com.mongodb.FongoDB;
 import com.mongodb.MockMongoClient;
 import com.mongodb.MongoClient;
@@ -8,23 +20,30 @@ import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
+import com.mongodb.WriteConcernException;
+import com.mongodb.WriteConcernResult;
 import com.mongodb.binding.ConnectionSource;
 import com.mongodb.binding.ReadBinding;
 import com.mongodb.binding.WriteBinding;
+import com.mongodb.bulk.DeleteRequest;
+import com.mongodb.bulk.InsertRequest;
+import com.mongodb.bulk.UpdateRequest;
+import com.mongodb.bulk.WriteRequest;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.connection.ServerVersion;
+import com.mongodb.internal.connection.NoOpSessionContext;
+import com.mongodb.internal.session.ClientSessionContext;
+import com.mongodb.operation.DeleteOperation;
+import com.mongodb.operation.InsertOperation;
+import com.mongodb.operation.MixedBulkWriteOperation;
 import com.mongodb.operation.OperationExecutor;
 import com.mongodb.operation.ReadOperation;
+import com.mongodb.operation.UpdateOperation;
 import com.mongodb.operation.WriteOperation;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.mongodb.session.ClientSession;
+import com.mongodb.session.SessionContext;
+
+import io.github.kjherron.wongo.bulk.WongoBulkWriteCombiner;
 
 /**
  * Faked out version of com.mongodb.Mongo
@@ -44,14 +63,15 @@ import org.slf4j.LoggerFactory;
  * @author jon
  * @author twillouer
  */
-public class Fongo implements OperationExecutor {
-  private final static Logger LOG = LoggerFactory.getLogger(Fongo.class);
+public class Fongo implements /* TODO REMOVE 3.6 */ OperationExecutor {
+  private static final Logger LOG = LoggerFactory.getLogger(Fongo.class);
 
   public static final ServerVersion V3_2_SERVER_VERSION = new ServerVersion(3, 2);
   public static final ServerVersion V3_3_SERVER_VERSION = new ServerVersion(3, 3);
+  public static final ServerVersion V3_6_SERVER_VERSION = new ServerVersion(3, 6);
   public static final ServerVersion V3_SERVER_VERSION = new ServerVersion(3, 0);
   public static final ServerVersion OLD_SERVER_VERSION = new ServerVersion(0, 0);
-  public static final ServerVersion DEFAULT_SERVER_VERSION = V3_2_SERVER_VERSION;
+  public static final ServerVersion DEFAULT_SERVER_VERSION = V3_6_SERVER_VERSION;
 
   private final Map<String, FongoDB> dbMap = new ConcurrentHashMap<String, FongoDB>();
   private final ServerAddress serverAddress;
@@ -175,7 +195,7 @@ public class Fongo implements OperationExecutor {
     return MockMongoClient.create(this);
   }
 
-  public <T> T execute(final ReadOperation<T> operation, final ReadPreference readPreference) {
+  public <T> T execute(final ReadOperation<T> operation, final ReadPreference readPreference, final ClientSession clientSession) {
     return operation.execute(new ReadBinding() {
       @Override
       public ReadPreference getReadPreference() {
@@ -185,6 +205,11 @@ public class Fongo implements OperationExecutor {
       @Override
       public ConnectionSource getReadConnectionSource() {
         return new FongoConnectionSource(Fongo.this);
+      }
+
+      @Override
+      public SessionContext getSessionContext() {
+        return clientSession == null ? NoOpSessionContext.INSTANCE : new ClientSessionContext(clientSession);
       }
 
       @Override
@@ -204,11 +229,84 @@ public class Fongo implements OperationExecutor {
     });
   }
 
-  public <T> T execute(final WriteOperation<T> operation) {
+  private <T> T
+  executeMixedBulkWriteOperation(final MixedBulkWriteOperation mixedBulkWriteOperation, final ClientSession clientSession) {
+      WongoBulkWriteCombiner fongoBulkWriteCombiner = new WongoBulkWriteCombiner(mixedBulkWriteOperation.getWriteConcern());
+      int i = 0;
+      for (WriteRequest writeRequest : mixedBulkWriteOperation.getWriteRequests()) {
+        if (writeRequest instanceof InsertRequest) {
+          try {
+			InsertRequest insertRequest = (InsertRequest) writeRequest;
+			  final WriteConcernResult update = new FongoConnection(this).insert(mixedBulkWriteOperation.getNamespace(), mixedBulkWriteOperation.isOrdered(), insertRequest);
+			  fongoBulkWriteCombiner.addInsertResult(update);
+		} catch (WriteConcernException e) {
+			fongoBulkWriteCombiner.addInsertError(i, e);
+			if (mixedBulkWriteOperation.isOrdered()) {
+				break;
+			}
+		}
+        } else if (writeRequest instanceof UpdateRequest) {
+          UpdateRequest updateRequest = (UpdateRequest) writeRequest;
+          final WriteConcernResult update = new FongoConnection(this).update(mixedBulkWriteOperation.getNamespace(), mixedBulkWriteOperation.isOrdered(), updateRequest);
+          fongoBulkWriteCombiner.addUpdateResult(i, update);
+        } else if (writeRequest instanceof DeleteRequest) {
+          DeleteRequest deleteRequest = (DeleteRequest) writeRequest;
+          final WriteConcernResult update = new FongoConnection(this).delete(mixedBulkWriteOperation.getNamespace(), mixedBulkWriteOperation.isOrdered(), deleteRequest);
+          fongoBulkWriteCombiner.addRemoveResult(update);
+        } else {
+          throw new FongoException("Fongo doesn't implement " + writeRequest.getClass());
+        }
+        i++;
+      }
+      fongoBulkWriteCombiner.throwOnError(getServerAddress());
+      return (T) fongoBulkWriteCombiner.toBulkWriteResult();
+  }
+
+  public <T> T execute(final WriteOperation<T> operation, final ClientSession clientSession) {
+    if (operation instanceof MixedBulkWriteOperation) {
+      MixedBulkWriteOperation mixedBulkWriteOperation = (MixedBulkWriteOperation) operation;
+      return executeMixedBulkWriteOperation(mixedBulkWriteOperation, clientSession);
+    } else if (operation instanceof UpdateOperation) {
+      final UpdateOperation updateOperation = (UpdateOperation) operation;
+      final FongoBulkWriteCombiner fongoBulkWriteCombiner = new FongoBulkWriteCombiner(updateOperation.getWriteConcern());
+      int i = 0;
+      for (UpdateRequest updateRequest : updateOperation.getUpdateRequests()) {
+        final WriteConcernResult update = new FongoConnection(this).update(updateOperation.getNamespace(), updateOperation.isOrdered(), updateRequest);
+        fongoBulkWriteCombiner.addUpdateResult(i, update);
+        i++;
+      }
+      return (T) fongoBulkWriteCombiner.toWriteConcernResult();
+    } else if (operation instanceof InsertOperation) {
+      final InsertOperation insertOperation = (InsertOperation) operation;
+      final FongoBulkWriteCombiner fongoBulkWriteCombiner = new FongoBulkWriteCombiner(insertOperation.getWriteConcern());
+      int i = 0;
+      for (InsertRequest insertRequest : insertOperation.getInsertRequests()) {
+        final WriteConcernResult update = new FongoConnection(this).insert(insertOperation.getNamespace(), insertOperation.isOrdered(), insertRequest);
+        fongoBulkWriteCombiner.addInsertResult(update);
+        i++;
+      }
+      return (T) fongoBulkWriteCombiner.toWriteConcernResult();
+    } else if (operation instanceof DeleteOperation) {
+      final DeleteOperation deleteOperation = (DeleteOperation) operation;
+      final FongoBulkWriteCombiner fongoBulkWriteCombiner = new FongoBulkWriteCombiner(deleteOperation.getWriteConcern());
+      int i = 0;
+      for (DeleteRequest deleteRequest : deleteOperation.getDeleteRequests()) {
+        final WriteConcernResult update = new FongoConnection(this).delete(deleteOperation.getNamespace(), deleteOperation.isOrdered(), deleteRequest);
+        fongoBulkWriteCombiner.addRemoveResult(update);
+        i++;
+      }
+      return (T) fongoBulkWriteCombiner.toWriteConcernResult();
+    }
+
     return operation.execute(new WriteBinding() {
       @Override
       public ConnectionSource getWriteConnectionSource() {
         return new FongoConnectionSource(Fongo.this);
+      }
+
+      @Override
+      public SessionContext getSessionContext() {
+        return clientSession == null ? NoOpSessionContext.INSTANCE : new ClientSessionContext(clientSession);
       }
 
       @Override
@@ -238,4 +336,15 @@ public class Fongo implements OperationExecutor {
     return serverVersion;
   }
 
+  // TODO REMOVE 3.6
+  @Override
+  public <T> T execute(ReadOperation<T> operation, ReadPreference readPreference) {
+    return execute(operation, readPreference, null);
+  }
+
+  // TODO REMOVE 3.6
+  @Override
+  public <T> T execute(WriteOperation<T> operation) {
+    return execute(operation, null);
+  }
 }

@@ -16,7 +16,6 @@ import com.mongodb.connection.Server;
 import com.mongodb.connection.ServerConnectionState;
 import com.mongodb.connection.ServerDescription;
 import com.mongodb.internal.connection.PowerOfTwoBufferPool;
-import com.mongodb.operation.OperationExecutor;
 import com.mongodb.selector.ServerSelector;
 import java.net.UnknownHostException;
 import java.util.Collection;
@@ -141,6 +140,15 @@ public class MockMongoClient extends MongoClient {
       }
 
       @Override
+      public ClusterDescription getCurrentDescription() {
+        ClusterDescription description = new ClusterDescription(ClusterConnectionMode.SINGLE, ClusterType.STANDALONE,
+            Collections.<ServerDescription>emptyList(), getSettings(),
+//            new ServerFactoryImpl().getSettings());
+            null);
+        return description;
+      }
+
+      @Override
       public Server selectServer(ServerSelector serverSelector) {
         return new Server() {
           @Override
@@ -178,8 +186,8 @@ public class MockMongoClient extends MongoClient {
     };
   }
 
-  OperationExecutor createOperationExecutor() {
-    return fongo;
+  com.mongodb.OperationExecutor createOperationExecutor() {
+    return new FongoOperationExecutor(fongo);
   }
 
   @Override

@@ -1,15 +1,25 @@
-package com.mongodb;
+package io.github.kjherron.wongo.bulk;
 
 import java.util.ArrayList;
-import static java.util.Collections.unmodifiableList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 
-public class FongoBulkWriteCombiner {
+import com.mongodb.MongoBulkWriteException;
+import com.mongodb.ServerAddress;
+import com.mongodb.WriteConcern;
+import com.mongodb.WriteConcernException;
+import com.mongodb.WriteConcernResult;
+import com.mongodb.WriteResult;
+import com.mongodb.bulk.BulkWriteError;
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.bulk.BulkWriteUpsert;
+
+public class WongoBulkWriteCombiner {
 
   private final WriteConcern writeConcern;
 
@@ -18,9 +28,9 @@ public class FongoBulkWriteCombiner {
   private int removedCount = 0;
   private int modifiedCount = 0;
 
-  private final Set<com.mongodb.BulkWriteUpsert> upserts = new TreeSet<com.mongodb.BulkWriteUpsert>(new Comparator<com.mongodb.BulkWriteUpsert>() {
+  private final Set<BulkWriteUpsert> upserts = new TreeSet<BulkWriteUpsert>(new Comparator<BulkWriteUpsert>() {
     @Override
-    public int compare(final com.mongodb.BulkWriteUpsert o1, final com.mongodb.BulkWriteUpsert o2) {
+    public int compare(final BulkWriteUpsert o1, final BulkWriteUpsert o2) {
       return (o1.getIndex() < o2.getIndex()) ? -1 : ((o1.getIndex() == o2.getIndex()) ? 0 : 1);
     }
   });
@@ -31,7 +41,7 @@ public class FongoBulkWriteCombiner {
     }
   });
 
-  public FongoBulkWriteCombiner(WriteConcern writeConcern) {
+  public WongoBulkWriteCombiner(WriteConcern writeConcern) {
     this.writeConcern = writeConcern;
   }
 
@@ -46,7 +56,7 @@ public class FongoBulkWriteCombiner {
       modifiedCount += wr.getN();
     } else {
       if (wr.getUpsertedId() != null) {
-        upserts.add(new BulkWriteUpsert(idx, wr.getUpsertedId()));
+        upserts.add(new BulkWriteUpsert(idx, (BsonValue) wr.getUpsertedId()));
       }
     }
   }
@@ -88,19 +98,19 @@ public class FongoBulkWriteCombiner {
 
   public BulkWriteResult getBulkWriteResult(WriteConcern writeConcern) {
     if (!writeConcern.isAcknowledged()) {
-      return new UnacknowledgedBulkWriteResult();
+      return BulkWriteResult.unacknowledged();
     }
-    return new AcknowledgedBulkWriteResult(insertedCount, matchedCount, removedCount, modifiedCount, new ArrayList<BulkWriteUpsert>(upserts));
+    return BulkWriteResult.acknowledged(insertedCount, matchedCount, removedCount, modifiedCount, new ArrayList<BulkWriteUpsert>(upserts));
   }
 
   public void throwOnError(ServerAddress address) {
     if (!errors.isEmpty()) {
       List<BulkWriteError> bwErrors = new ArrayList<BulkWriteError>();
       for (WriteError e: errors) {
-        bwErrors.add(new BulkWriteError(e.code, e.message, FongoDBCollection.dbObject(e.details), e.index));
+        bwErrors.add(new BulkWriteError(e.code, e.message, new BsonDocument(), e.index));
       }
       BulkWriteResult bulkWriteResult = getBulkWriteResult(writeConcern);
-      throw new BulkWriteException(bulkWriteResult, bwErrors, null, address);
+      throw new MongoBulkWriteException(bulkWriteResult, bwErrors, null, address);
     }
   }
 
@@ -108,7 +118,7 @@ public class FongoBulkWriteCombiner {
     if (this.writeConcern.isAcknowledged()) {
       final ArrayList<com.mongodb.bulk.BulkWriteUpsert> bulkWriteUpserts = new ArrayList<com.mongodb.bulk.BulkWriteUpsert>();
       for (BulkWriteUpsert upsert : this.upserts) {
-        bulkWriteUpserts.add(new com.mongodb.bulk.BulkWriteUpsert(upsert.getIndex(), (BsonValue) upsert.getId()));
+        bulkWriteUpserts.add(new com.mongodb.bulk.BulkWriteUpsert(upsert.getIndex(), upsert.getId()));
       }
       return com.mongodb.bulk.BulkWriteResult.acknowledged(insertedCount, matchedCount, removedCount, modifiedCount, bulkWriteUpserts);
     } else {

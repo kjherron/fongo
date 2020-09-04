@@ -7,7 +7,7 @@
     </parent>
     <groupId>io.github.kjherron</groupId>
     <artifactId>wongo</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <name>wongo</name>
     <description>Fake in-memory mongo</description>
     <url>https://github.com/kjherron/wongo</url>
@@ -51,7 +51,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.11.6</scala.version>
-        <version.surefire>2.18.1</version.surefire>
+        <version.surefire>2.19.1</version.surefire>
 
         <!-- Jacoco -->
         <jacoco.destFile.unit>${project.build.directory}/jacoco-unit.exec</jacoco.destFile.unit>
@@ -78,13 +78,13 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.4.2</version>
+            <version>3.6.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-async</artifactId>
-            <version>3.4.2</version>
+            <version>3.6.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

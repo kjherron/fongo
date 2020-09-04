@@ -17,7 +17,7 @@ public class FongoMongoDatabase extends MongoDatabaseImpl {
   }
 
   private FongoMongoDatabase(final String databaseName, final Fongo fongo, final CodecRegistry codecRegistry, final ReadPreference readPreference, final WriteConcern writeConcern, final ReadConcern readConcern) {
-    super(databaseName, codecRegistry, readPreference, writeConcern, readConcern, fongo);
+    super(databaseName, codecRegistry, readPreference, writeConcern, false, readConcern, new FongoOperationExecutor(fongo));
     this.fongo = fongo;
   }
 

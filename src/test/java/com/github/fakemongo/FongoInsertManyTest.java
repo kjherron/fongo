@@ -1,20 +1,23 @@
 package com.github.fakemongo;
 
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+
 import com.github.fakemongo.junit.FongoRule;
 import com.mongodb.MongoBulkWriteException;
 import com.mongodb.bulk.BulkWriteError;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.InsertManyOptions;
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 /**
  * Behavior of real mongo driver's {@link com.mongodb.client.MongoCollection#insertMany} is as follows:
@@ -28,18 +31,18 @@ import static org.assertj.core.api.Assertions.fail;
  */
 public class FongoInsertManyTest {
 
-  public static final boolean REAL_MONGO = false;
+  private static final boolean REAL_MONGO = false;
 
   @Rule
   public FongoRule fongoRule = new FongoRule(REAL_MONGO);
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     fongoRule.getDatabase("db").getCollection("collection").drop();
   }
 
   @Test
-  public void should_insert_all_given_documents() throws Exception {
+  public void should_insert_all_given_documents() {
     // Given
     MongoCollection<Document> collection = fongoRule.getDatabase("db").getCollection("collection");
     Document document1 = new Document("_id", 1);
@@ -236,7 +239,7 @@ public class FongoInsertManyTest {
 
   private String getDuplicateKeyMessage(Object value) {
     if (REAL_MONGO) {
-      return "E11000 duplicate key error index: db.collection.$_id_ dup key: { : " + value + " }";
+      return "E11000 duplicate key error collection: db.collection index: _id_ dup key: { : " + value + " }";
     } else {
       return "E11000 duplicate key error index: db.collection._id  dup key : {[[" + value + "]] }";
     }

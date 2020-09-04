@@ -1,44 +1,20 @@
 package com.github.fakemongo;
 
-import com.github.fakemongo.junit.FongoRule;
-import com.mongodb.*;
-import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.AggregateIterable;
-import com.mongodb.client.DistinctIterable;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.ListCollectionsIterable;
-import com.mongodb.client.ListIndexesIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.MongoIterable;
-import com.mongodb.client.model.CountOptions;
-import com.mongodb.client.model.DeleteOneModel;
-import com.mongodb.client.model.Filters;
 import static com.mongodb.client.model.Filters.eq;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.InsertOneModel;
-import com.mongodb.client.model.Projections;
 import static com.mongodb.client.model.Projections.excludeId;
 import static com.mongodb.client.model.Projections.slice;
-import com.mongodb.client.model.ReplaceOneModel;
-import com.mongodb.client.model.ReturnDocument;
 import static com.mongodb.client.model.Sorts.ascending;
 import static com.mongodb.client.model.Sorts.descending;
-import com.mongodb.client.model.UpdateOneModel;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
-import com.mongodb.connection.ServerVersion;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import static java.util.Arrays.asList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+
 import org.assertj.core.api.Assertions;
-import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.api.Condition;
 import org.assertj.core.util.Lists;
 import org.bson.BsonDocument;
@@ -57,6 +33,39 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
+
+import com.github.fakemongo.junit.FongoRule;
+import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.DBCollection;
+import com.mongodb.MongoBulkWriteException;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoNamespace;
+import com.mongodb.WriteConcern;
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.DistinctIterable;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.ListCollectionsIterable;
+import com.mongodb.client.ListIndexesIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoIterable;
+import com.mongodb.client.model.CountOptions;
+import com.mongodb.client.model.DeleteOneModel;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.InsertOneModel;
+import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.ReplaceOneModel;
+import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
+import com.mongodb.connection.ServerVersion;
 
 /**
  *
@@ -737,10 +746,8 @@ public abstract class AbstractFongoV3Test {
             docId(3),
             docId(4).append("x", 4)
     );
-
-
   }
-  
+
   @Test
   public void bulkWrite_duplicatedKey() {
     // 2. Ordered bulk operation - order is guaranteed
@@ -982,6 +989,8 @@ public abstract class AbstractFongoV3Test {
 
     // When
     final UpdateResult updateResult = col.replaceOne(eq("_id", 1), new Document("key", "value2"), new UpdateOptions().upsert(true));
+
+    // 3.6: AcknowledgedUpdateResult{matchedCount=0, modifiedCount=0, upsertedId=BsonInt32{value=1}}
 
     // When
     assertThat(toList(col.find())).containsOnly(new Document("_id", 1).append("key", "value2"));

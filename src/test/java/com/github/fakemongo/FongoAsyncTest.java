@@ -5,10 +5,12 @@ import com.github.fakemongo.junit.FongoAsyncRule;
 import com.mongodb.async.client.MongoCollection;
 import com.mongodb.async.client.MongoDatabase;
 import com.mongodb.async.client.MongoIterable;
+import com.mongodb.client.result.DeleteResult;
 import java.util.ArrayList;
 import static java.util.Arrays.asList;
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
+
 import org.bson.Document;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,13 +56,19 @@ public class FongoAsyncTest {
   public void insertOne_and_count_works() throws Throwable {
     // Given
     final MongoCollection<Document> collection = newCollection();
-    collection.insertOne(new Document("i", 1), null);
-    collection.insertOne(new Document("i", 1), null);
+
+    AwaitResultSingleResultCallback<Void> result1 = new AwaitResultSingleResultCallback<Void>();
+    collection.insertOne(new Document("i", 1), result1);
+    result1.awaitResult();
+
+    AwaitResultSingleResultCallback<Void> result2 = new AwaitResultSingleResultCallback<Void>();
+    collection.insertOne(new Document("i", 1), result2);
+    result2.awaitResult();
 
     // When/Then
-    AwaitResultSingleResultCallback<Long> result = new AwaitResultSingleResultCallback<Long>();
-    collection.count(result);
-    assertThat(result.awaitResult()).isEqualTo(2L);
+    AwaitResultSingleResultCallback<Long> result3 = new AwaitResultSingleResultCallback<Long>();
+    collection.count(result3);
+    assertThat(result3.awaitResult()).isEqualTo(2L);
   }
 
   @Test
@@ -340,23 +348,30 @@ public class FongoAsyncTest {
 //    collection.findOneAndUpdate(docId(2), new Document("$set", new Document("a", 1)));
 //  }
 //
-//  @Test
-//  public void deleteMany_remove_many() {
-//    // Given
-//    MongoCollection collection = newCollection();
-//    collection.insertOne(docId(1));
-//    collection.insertOne(docId(2).append("b", 5));
-//    collection.insertOne(docId(3).append("b", 5));
-//    collection.insertOne(docId(4));
-//    collection.insertOne(docId(5).append("b", 6));
-//
-//    // When
-//    final DeleteResult deleteResult = collection.deleteMany(new Document("b", 5));
-//
-//    // Then
-//    Assertions.assertThat(toList(collection.find())).containsExactly(docId(1), docId(4), docId(5).append("b", 6));
-//    assertThat(deleteResult.getDeletedCount()).isEqualTo(2L);
-//  }
+  @Test
+  public void deleteMany_remove_many() throws Throwable {
+    // Given
+    MongoCollection<Document> collection = newCollection();
+
+    AwaitResultSingleResultCallback<Void> result1 = new AwaitResultSingleResultCallback<Void>();
+    collection.insertMany(asList(
+            docId(1),
+            docId(2).append("b", 5),
+            docId(3).append("b", 5),
+            docId(4),
+            docId(5).append("b", 6)
+    ), result1);
+    result1.awaitResult();
+
+    // When
+    AwaitResultSingleResultCallback<DeleteResult> result2 = new AwaitResultSingleResultCallback<DeleteResult>();
+    collection.deleteMany(new Document("b", 5),result2);
+    DeleteResult deleteResult = result2.awaitResult();
+
+    // Then
+    assertThat(toList(collection.find())).containsExactly(docId(1), docId(4), docId(5).append("b", 6));
+    assertThat(deleteResult.getDeletedCount()).isEqualTo(2L);
+  }
 //
 //  @Test
 //  public void findOneAndDelete_remove_one() {
