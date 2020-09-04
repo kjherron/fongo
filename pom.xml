@@ -63,9 +63,6 @@
         <sonar.jacoco.reportPath>${jacoco.destFile.unit}</sonar.jacoco.reportPath>
         <sonar.core.codeCoveragePlugin>jacoco</sonar.core.codeCoveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-
-        <!-- Gpg -->
-        <gpg.keyname>257FA0AB</gpg.keyname>
     </properties>
 
     <dependencies>
@@ -380,6 +377,13 @@
                     </execution>
                 </executions>
             </plugin>
+			<plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-gpg-plugin</artifactId>
+			    <configuration>
+			        <skip>true</skip>
+			    </configuration>
+			</plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -436,11 +440,12 @@
     </build>
 
     <profiles>
+    	<!-- 
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>
-                    <name>performRelease</name>
+                    <name>performReleaseX</name>
                     <value>true</value>
                 </property>
             </activation>
@@ -463,6 +468,7 @@
                 </plugins>
             </build>
         </profile>
+        -->
         <profile>
             <id>perf-benchmark</id>
             <activation>
