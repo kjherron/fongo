@@ -1,8 +1,13 @@
-package com.mongodb;
+package com.mongodb.client.internal;
 
 import com.github.fakemongo.Fongo;
+import com.mongodb.MongoNamespace;
+import com.mongodb.ReadConcern;
+import com.mongodb.ReadPreference;
+import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+
 import org.bson.codecs.configuration.CodecRegistry;
 
 /**

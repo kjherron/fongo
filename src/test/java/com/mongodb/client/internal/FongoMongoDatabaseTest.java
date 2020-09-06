@@ -1,8 +1,13 @@
-package com.mongodb;
+package com.mongodb.client.internal;
 
 import com.github.fakemongo.Fongo;
 import static com.mongodb.WriteConcern.REPLICA_ACKNOWLEDGED;
+
+import com.mongodb.MongoClient;
+import com.mongodb.ReadPreference;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.internal.FongoMongoDatabase;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.junit.Before;

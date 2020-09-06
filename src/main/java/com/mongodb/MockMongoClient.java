@@ -1,9 +1,19 @@
 package com.mongodb;
 
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import org.objenesis.ObjenesisHelper;
+import org.objenesis.ObjenesisStd;
+
 import com.github.fakemongo.Fongo;
 import com.github.fakemongo.FongoConnection;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.internal.FongoMongoDatabase;
+import com.mongodb.client.internal.FongoOperationExecutor;
 import com.mongodb.connection.AsyncConnection;
 import com.mongodb.connection.BufferProvider;
 import com.mongodb.connection.Cluster;
@@ -17,12 +27,6 @@ import com.mongodb.connection.ServerConnectionState;
 import com.mongodb.connection.ServerDescription;
 import com.mongodb.internal.connection.PowerOfTwoBufferPool;
 import com.mongodb.selector.ServerSelector;
-import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import org.objenesis.ObjenesisHelper;
-import org.objenesis.ObjenesisStd;
 
 public class MockMongoClient extends MongoClient {
 
@@ -186,7 +190,8 @@ public class MockMongoClient extends MongoClient {
     };
   }
 
-  com.mongodb.OperationExecutor createOperationExecutor() {
+  @Override
+  com.mongodb.client.internal.OperationExecutor createOperationExecutor() {
     return new FongoOperationExecutor(fongo);
   }
 
