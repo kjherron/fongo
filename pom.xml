@@ -7,7 +7,7 @@
     </parent>
     <groupId>io.github.kjherron</groupId>
     <artifactId>wongo</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
     <name>wongo</name>
     <description>Fake in-memory mongo</description>
     <url>https://github.com/kjherron/wongo</url>
@@ -63,6 +63,7 @@
         <sonar.jacoco.reportPath>${jacoco.destFile.unit}</sonar.jacoco.reportPath>
         <sonar.core.codeCoveragePlugin>jacoco</sonar.core.codeCoveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        <mongodriver.version>3.7.0</mongodriver.version>
     </properties>
 
     <dependencies>
@@ -75,13 +76,13 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.6.2</version>
+            <version>${mongodriver.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-async</artifactId>
-            <version>3.6.2</version>
+            <version>${mongodriver.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
